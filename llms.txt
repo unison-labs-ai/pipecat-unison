@@ -1,0 +1,30 @@
+# pipecat-unison
+
+> Drop-in persistent memory for [Pipecat](https://pipecat.ai) voice AI agents, powered
+> by the [Unison brain](https://unisonlabs.ai) — a hosted, path-addressable knowledge
+> base with hybrid semantic + keyword search.
+
+**Agents: start with [AGENTS.md](AGENTS.md)** — it covers install, auth with a `usk_`
+key, programmatic usage, and how to contribute to this repo.
+
+The Pipecat processor (`backend/unison_pipecat.py`) intercepts `LLMContextFrame`
+objects in your pipeline, retrieves relevant memories from the Unison brain, injects
+them into the system prompt, then saves a session note after each turn so knowledge
+accumulates across conversations.
+
+Auth is a `usk_...` machine key via `UNISON_TOKEN` env var or `token=` constructor
+argument. The backend is the security boundary; the client enforces nothing.
+
+## Docs
+- [README](README.md): quickstart, environment variables, pipeline usage, deployment
+- [AGENTS.md](AGENTS.md): how an agent installs, authenticates, and uses this client
+- [CONTRIBUTING.md](CONTRIBUTING.md): development workflow, conventions, PR checklist
+
+## Usage
+- [backend/unison_pipecat.py](backend/unison_pipecat.py): `UnisonPipecatService` — the Pipecat frame processor
+- [backend/server.py](backend/server.py): FastAPI + Pipecat voice server with full pipeline
+- [src/app.tsx](src/app.tsx): React frontend — voice UI + live Unison brain memory panel
+
+## Examples
+- [README — Pipecat processor](README.md#pipecat-processor): minimal pipeline with `UnisonPipecatService`
+- [README — Getting a token](README.md#getting-a-unison_token): provision a `usk_` key in one `curl` call
