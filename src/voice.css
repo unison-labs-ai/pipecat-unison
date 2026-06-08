@@ -465,7 +465,9 @@ body,
   color: var(--text-muted);
   cursor: pointer;
   letter-spacing: 0.03em;
-  transition: color 0.1s, border-color 0.1s;
+  transition:
+    color 0.1s,
+    border-color 0.1s;
   margin-bottom: -1px;
 }
 
