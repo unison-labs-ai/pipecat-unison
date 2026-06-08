@@ -239,7 +239,7 @@ async def list_memories(userId: str = Query(...), query: str = Query(default=Non
         else:
             prefix = f"/private/users/{userId}"
             docs = client._check(
-                __import__("requests").get(
+                requests.get(
                     client._url("/brain/list"),
                     headers=client._headers(),
                     params={"prefix": prefix, "limit": 100},
@@ -263,6 +263,107 @@ async def list_memories(userId: str = Query(...), query: str = Query(default=Non
         return JSONResponse({"error": str(exc)}, status_code=500)
 
     return JSONResponse({"memories": memories})
+
+
+@app.get("/api/profile")
+async def get_profile(userId: str = Query(...)):
+    """Return the user's persistent profile document as static/dynamic facts.
+
+    The Unison profile document lives at /private/users/{userId}/profile.md.
+    Its body is free-form Markdown; we surface the full text as a dynamic fact
+    so the frontend can display it — or an empty profile when none exists yet.
+    """
+    unison_token = os.getenv("UNISON_TOKEN")
+    if not unison_token:
+        return JSONResponse({"error": "UNISON_TOKEN not configured"}, status_code=500)
+
+    client = UnisonClient(token=unison_token)
+    profile_path = f"/private/users/{userId}/profile.md"
+
+    try:
+        doc = client.get_doc(profile_path)
+    except UnisonError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=exc.status)
+    except Exception as exc:
+        logger.error(f"get_profile error: {exc}")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+    if not doc or not doc.get("bodyMd"):
+        return JSONResponse({"profile": {"static": [], "dynamic": []}})
+
+    body: str = doc["bodyMd"]
+    # Split into non-empty lines for rendering as individual fact chips.
+    # Lines starting with "# " or "## " are headers — treat them as static
+    # (stable facts); plain bullet / paragraph lines are dynamic (session-derived).
+    static_facts: list[str] = []
+    dynamic_facts: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip().lstrip("- ").strip()
+        if not stripped:
+            continue
+        if line.startswith("#"):
+            static_facts.append(stripped.lstrip("# ").strip())
+        else:
+            dynamic_facts.append(stripped)
+
+    return JSONResponse({
+        "profile": {
+            "static": static_facts,
+            "dynamic": dynamic_facts[:20],
+        }
+    })
+
+
+@app.get("/api/documents")
+async def list_documents(
+    userId: str = Query(...),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
+):
+    """List session-note documents for the given user.
+
+    Returns the most-recent `limit` session-note documents written by
+    UnisonPipecatService for this user, ordered newest-first.
+    """
+    unison_token = os.getenv("UNISON_TOKEN")
+    if not unison_token:
+        return JSONResponse({"error": "UNISON_TOKEN not configured"}, status_code=500)
+
+    client = UnisonClient(token=unison_token)
+    sessions_prefix = f"/private/users/{userId}/sessions/"
+
+    try:
+        raw = client._check(
+            requests.get(
+                client._url("/brain/list"),
+                headers=client._headers(),
+                params={"prefix": sessions_prefix, "limit": limit * page},
+                timeout=10,
+            )
+        )
+    except UnisonError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=exc.status)
+    except Exception as exc:
+        logger.error(f"list_documents error: {exc}")
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+    all_docs = raw.get("documents", [])
+    # Sort newest-first by updatedAt / createdAt
+    all_docs.sort(key=lambda d: d.get("updatedAt") or d.get("createdAt") or "", reverse=True)
+    page_docs = all_docs[(page - 1) * limit: page * limit]
+
+    documents = [
+        {
+            "id": doc.get("id", f"doc-{i}"),
+            "title": doc.get("title") or doc.get("path", "").split("/")[-1],
+            "summary": doc.get("tldr") or "",
+            "createdAt": doc.get("createdAt") or doc.get("updatedAt") or "",
+            "path": doc.get("path", ""),
+        }
+        for i, doc in enumerate(page_docs)
+    ]
+
+    return JSONResponse({"documents": documents})
 
 
 @app.get("/health")
