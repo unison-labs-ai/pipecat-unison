@@ -7,7 +7,7 @@ import "./voice.css";
 const BACKEND_URL =
   import.meta.env["VITE_BACKEND_URL"] ?? "http://localhost:8001";
 
-// Unison API URL + token for the in-browser memories panel
+// Unison API URL + token for the in-browser whoami check
 const UNISON_API_URL =
   import.meta.env["VITE_UNISON_API_URL"] ?? "https://api.unisonlabs.ai";
 const UNISON_TOKEN = import.meta.env["VITE_UNISON_TOKEN"] ?? "";
@@ -79,13 +79,28 @@ interface Memory {
   type: string;
 }
 
+interface ProfileData {
+  profile: {
+    static: string[];
+    dynamic: string[];
+  };
+}
+
+interface SessionDocument {
+  id: string;
+  title: string;
+  summary: string;
+  createdAt: string;
+  path: string;
+}
+
 interface TranscriptEntry {
   role: "user" | "bot";
   text: string;
   timestamp: Date;
 }
 
-// ── Unison brain client (browser, using the REST API directly) ─────────────
+// ── Unison brain client helpers ────────────────────────────────────────────
 
 async function searchMemories(
   userId: string,
@@ -98,6 +113,38 @@ async function searchMemories(
   const data = (await resp.json()) as { memories?: Memory[]; error?: string };
   if (data.error || !Array.isArray(data.memories)) return [];
   return data.memories;
+}
+
+async function fetchProfileData(userId: string): Promise<ProfileData | null> {
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/profile?userId=${userId}`);
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as ProfileData & { error?: string };
+    if (data.error || !data.profile) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchSessionDocuments(
+  userId: string,
+  limit = 10,
+): Promise<SessionDocument[]> {
+  try {
+    const resp = await fetch(
+      `${BACKEND_URL}/api/documents?userId=${userId}&page=1&limit=${limit}`,
+    );
+    if (!resp.ok) return [];
+    const data = (await resp.json()) as {
+      documents?: SessionDocument[];
+      error?: string;
+    };
+    if (data.error || !Array.isArray(data.documents)) return [];
+    return data.documents;
+  } catch {
+    return [];
+  }
 }
 
 async function checkWhoami(): Promise<{
@@ -160,6 +207,13 @@ export function VoiceApp() {
   const [isLoadingMemories, setIsLoadingMemories] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Profile + session docs
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [sessionDocs, setSessionDocs] = useState<SessionDocument[]>([]);
+
+  // Active right-panel tab
+  const [activeTab, setActiveTab] = useState<"context" | "sessions">("context");
+
   // Refs
   const clientRef = useRef<PipecatClient | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -207,16 +261,57 @@ export function VoiceApp() {
     [userId],
   );
 
-  // Polling: refresh memories every 12 s while a session is active
+  // Fetch profile (preserves existing data on error)
+  const fetchProfile = useCallback(async () => {
+    const data = await fetchProfileData(userId);
+    if (data) setProfileData(data);
+  }, [userId]);
+
+  // Fetch session documents (preserves existing data on error)
+  const fetchSessionDocs = useCallback(async () => {
+    const docs = await fetchSessionDocuments(userId, 10);
+    if (docs.length > 0) setSessionDocs(docs);
+  }, [userId]);
+
+  // Staggered polling for context tab data
   useEffect(() => {
-    if (!hasEverStarted) return;
+    if (!hasEverStarted || activeTab !== "context") return;
+
     fetchMemories(searchQuery || undefined, true);
-    const interval = setInterval(
+    const t1 = setTimeout(() => fetchProfile(), 400);
+    const t2 = setTimeout(() => fetchSessionDocs(), 800);
+
+    const intervalMemories = setInterval(
       () => fetchMemories(searchQuery || undefined, false),
-      12000,
+      10000,
     );
+    const intervalProfile = setInterval(() => fetchProfile(), 12000);
+    const intervalSessions = setInterval(() => fetchSessionDocs(), 14000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearInterval(intervalMemories);
+      clearInterval(intervalProfile);
+      clearInterval(intervalSessions);
+    };
+  }, [
+    hasEverStarted,
+    activeTab,
+    fetchMemories,
+    fetchProfile,
+    fetchSessionDocs,
+    searchQuery,
+  ]);
+
+  // Polling for sessions tab
+  useEffect(() => {
+    if (!hasEverStarted || activeTab !== "sessions") return;
+
+    fetchSessionDocs();
+    const interval = setInterval(() => fetchSessionDocs(), 10000);
     return () => clearInterval(interval);
-  }, [hasEverStarted, fetchMemories, searchQuery]);
+  }, [hasEverStarted, activeTab, fetchSessionDocs]);
 
   // ── Voice connection ──────────────────────────────────────────────────────
 
@@ -254,8 +349,11 @@ export function VoiceApp() {
               ttsBufferRef.current = "";
               lastBotMsgIdxRef.current = -1;
               addTranscript("user", data.text);
-              // Refresh memories 3 s after the user speaks
-              setTimeout(() => fetchMemories(undefined, false), 3000);
+              // Refresh memories + profile 3 s after the user speaks
+              setTimeout(() => {
+                fetchMemories(undefined, false);
+                fetchProfile();
+              }, 3000);
             }
           },
           onBotTtsText: (data) => {
@@ -315,7 +413,14 @@ export function VoiceApp() {
       setIsConnecting(false);
       clientRef.current = null;
     }
-  }, [addTranscript, setupAudioTrack, fetchMemories, userId, sessionId]);
+  }, [
+    addTranscript,
+    setupAudioTrack,
+    fetchMemories,
+    fetchProfile,
+    userId,
+    sessionId,
+  ]);
 
   const endConversation = useCallback(async () => {
     if (clientRef.current) {
@@ -446,10 +551,23 @@ export function VoiceApp() {
         {error && <div className="error-banner">{error}</div>}
       </div>
 
-      {/* Right panel — Unison brain memories */}
+      {/* Right panel — Unison brain */}
       <div className="right-panel">
-        <div className="panel-header">
-          <h2 className="panel-title">Unison Brain</h2>
+        <div className="tabs-header">
+          <button
+            className={`tab-button ${activeTab === "context" ? "active" : ""}`}
+            onClick={() => setActiveTab("context")}
+            type="button"
+          >
+            Context
+          </button>
+          <button
+            className={`tab-button ${activeTab === "sessions" ? "active" : ""}`}
+            onClick={() => setActiveTab("sessions")}
+            type="button"
+          >
+            Sessions
+          </button>
           {whoami && (
             <span className="brain-tenant">
               {whoami.tenant || whoami.email}
@@ -457,56 +575,148 @@ export function VoiceApp() {
           )}
         </div>
 
-        <div className="search-bar">
-          <input
-            className="search-input"
-            placeholder="Search memories..."
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") fetchMemories(searchQuery || undefined);
-            }}
-          />
-          <button
-            className="search-btn"
-            type="button"
-            onClick={() => fetchMemories(searchQuery || undefined)}
-          >
-            Search
-          </button>
-        </div>
+        <div className="tab-content">
+          {activeTab === "context" && (
+            <div className="context-two-column">
+              {/* Left column — Memories */}
+              <div className="context-column memories-column">
+                <div className="column-header">
+                  <h3 className="column-title">Memories</h3>
+                </div>
 
-        <div className="memories-section">
-          <div className="column-header">
-            <h3 className="column-title">Memories</h3>
-          </div>
+                <div className="search-bar">
+                  <input
+                    className="search-input"
+                    placeholder="Search memories..."
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter")
+                        fetchMemories(searchQuery || undefined);
+                    }}
+                  />
+                  <button
+                    className="search-btn"
+                    type="button"
+                    onClick={() => fetchMemories(searchQuery || undefined)}
+                  >
+                    Search
+                  </button>
+                </div>
 
-          {isLoadingMemories && memories.length === 0 ? (
-            <div className="loading">
-              <div className="loading-spinner" />
-              Loading...
-            </div>
-          ) : memories.length === 0 ? (
-            <div className="empty-state">
-              <span>No memories yet</span>
-              <span>Start a conversation to generate memories</span>
-            </div>
-          ) : (
-            <div className="memory-list">
-              {memories.map((mem) => (
-                <div className="memory-card" key={mem.id}>
-                  <div className="memory-content">{mem.memory}</div>
-                  <div className="memory-meta">
-                    <span className="memory-path">{mem.path}</span>
-                    {mem.created_at && (
-                      <span className="memory-time">
-                        {formatRelativeTime(mem.created_at)}
-                      </span>
-                    )}
+                {isLoadingMemories && memories.length === 0 ? (
+                  <div className="loading">
+                    <div className="loading-spinner" />
+                    Loading...
+                  </div>
+                ) : memories.length === 0 ? (
+                  <div className="empty-state">
+                    <span>No memories yet</span>
+                    <span>Start a conversation to generate memories</span>
+                  </div>
+                ) : (
+                  <div className="memory-list">
+                    {memories.map((mem) => (
+                      <div className="memory-card" key={mem.id}>
+                        <div className="memory-content">{mem.memory}</div>
+                        <div className="memory-meta">
+                          <span className="memory-path">{mem.path}</span>
+                          {mem.created_at && (
+                            <span className="memory-time">
+                              {formatRelativeTime(mem.created_at)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right column — Profile */}
+              <div className="context-column profile-column">
+                <div className="profile-section">
+                  <div className="section-header">
+                    <div className="section-indicator" />
+                    <h3 className="section-title">Profile</h3>
+                  </div>
+                  <div className="profile-content">
+                    {profileData?.profile.static &&
+                      profileData.profile.static.length > 0 && (
+                        <div className="profile-subsection">
+                          <div className="subsection-label">Static</div>
+                          <div className="profile-facts">
+                            {profileData.profile.static.map((fact, idx) => (
+                              <div
+                                className="profile-fact static"
+                                key={`static-${
+                                  // biome-ignore lint/suspicious/noArrayIndexKey: stable ordered list
+                                  idx
+                                }`}
+                              >
+                                {fact}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    {profileData?.profile.dynamic &&
+                      profileData.profile.dynamic.length > 0 && (
+                        <div className="profile-subsection">
+                          <div className="subsection-label">Dynamic</div>
+                          <div className="profile-facts">
+                            {profileData.profile.dynamic.map((fact, idx) => (
+                              <div
+                                className="profile-fact dynamic"
+                                key={`dynamic-${
+                                  // biome-ignore lint/suspicious/noArrayIndexKey: stable ordered list
+                                  idx
+                                }`}
+                              >
+                                {fact}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    {!profileData?.profile.static?.length &&
+                      !profileData?.profile.dynamic?.length && (
+                        <div className="empty-section">
+                          <span>No profile data yet</span>
+                        </div>
+                      )}
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "sessions" && (
+            <div className="sessions-container">
+              <div className="column-header">
+                <h3 className="column-title">Past Sessions</h3>
+              </div>
+              {sessionDocs.length === 0 ? (
+                <div className="empty-state">
+                  <span>No sessions yet</span>
+                  <span>Session notes are saved after each conversation</span>
+                </div>
+              ) : (
+                <div className="session-docs">
+                  {sessionDocs.map((doc) => (
+                    <div className="session-doc" key={doc.id}>
+                      <div className="session-doc-title">{doc.title}</div>
+                      {doc.summary && (
+                        <div className="session-doc-summary">{doc.summary}</div>
+                      )}
+                      <div className="session-doc-time">
+                        {formatRelativeTime(doc.createdAt)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
