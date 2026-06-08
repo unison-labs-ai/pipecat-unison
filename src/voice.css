@@ -1,0 +1,445 @@
+/* pipecat-unison — voice app styles */
+
+:root {
+  --bg: #0a0a0a;
+  --bg-panel: #111111;
+  --bg-card: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --text-muted: #666;
+  --accent: #6366f1;
+  --accent-dim: #3730a3;
+  --user-bubble: #1e293b;
+  --bot-bubble: #0f172a;
+  --error: #ef4444;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ── Landing ─────────────────────────────────────────────────────────────── */
+
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 40px;
+  padding: 24px;
+}
+
+.integration-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.unison-wordmark,
+.pipecat-wordmark {
+  height: 28px;
+  opacity: 0.95;
+}
+
+.divider {
+  font-size: 20px;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.start-button-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.gradient-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: radial-gradient(circle at 35% 35%, #818cf8, #4f46e5, #1e1b4b);
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.gradient-circle:hover:not(:disabled) {
+  transform: scale(1.06);
+  box-shadow: 0 0 60px rgba(99, 102, 241, 0.5);
+}
+
+.gradient-circle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gradient-circle-small {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #a5b4fc, #4f46e5);
+  flex-shrink: 0;
+}
+
+.start-text {
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.brain-status {
+  color: #6366f1;
+}
+
+.brain-warning {
+  color: #f59e0b;
+}
+
+.error-banner {
+  padding: 8px 16px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 12px;
+  max-width: 480px;
+  text-align: center;
+}
+
+/* ── App layout ──────────────────────────────────────────────────────────── */
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Left panel — transcript ─────────────────────────────────────────────── */
+
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.top-bar {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+}
+
+.top-bar-logo .unison-wordmark,
+.top-bar-logo .pipecat-wordmark {
+  height: 20px;
+}
+
+.top-bar-logo .divider {
+  font-size: 16px;
+}
+
+.conversation-control-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.control-bar-text {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.start-btn-inline {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: inherit;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.start-btn-inline:hover {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.end-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: inherit;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: var(--error);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.end-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-messages {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  max-width: 85%;
+  line-height: 1.5;
+}
+
+.message.user {
+  background: var(--user-bubble);
+  align-self: flex-end;
+  border: 1px solid #1e3a5f;
+}
+
+.message.bot {
+  background: var(--bot-bubble);
+  align-self: flex-start;
+  border: 1px solid var(--border);
+}
+
+.message-role {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Right panel — Unison brain ──────────────────────────────────────────── */
+
+.right-panel {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brain-tenant {
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+}
+
+.search-btn {
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: #c7d2fe;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.search-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.memories-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.column-header {
+  padding: 12px 16px 8px;
+}
+
+.column-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.memory-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memory-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memory-content {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.memory-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.memory-path {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.memory-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.user-id-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+}

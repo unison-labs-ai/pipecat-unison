@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Persistent memory for Pipecat voice AI agents — powered by Unison"
+    />
+    <meta name="theme-color" content="#000000" />
+
+    <title>Unison × Pipecat</title>
+
+    <script>
+      document.documentElement.classList.toggle(
+        "dark",
+        localStorage.theme === "dark" ||
+          (!("theme" in localStorage) &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches),
+      );
+    </script>
+
+    <style>
+      html {
+        background: #0a0a0a;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="app"></div>
+    <script type="module" src="/src/client.tsx"></script>
+  </body>
+</html>
