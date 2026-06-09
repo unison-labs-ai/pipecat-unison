@@ -15,6 +15,7 @@ import os
 import sys
 import uuid
 
+import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
