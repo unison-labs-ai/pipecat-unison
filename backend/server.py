@@ -12,6 +12,7 @@ Quick start:
 """
 
 import os
+import re
 import sys
 import uuid
 
@@ -43,6 +44,12 @@ from pipecat.transports.websocket.fastapi import (
 )
 
 from unison_pipecat import UnisonClient, UnisonError, UnisonPipecatService
+
+
+def _slug(value: str) -> str:
+    """Slugify a value for use in a brain path segment (mirrors UnisonPipecatService._slug)."""
+    s = re.sub(r"[^a-z0-9]+", "-", value.lower())
+    return s.strip("-")
 
 load_dotenv(override=True)
 
@@ -238,7 +245,7 @@ async def list_memories(userId: str = Query(...), query: str = Query(default=Non
                 for i, hit in enumerate(hits)
             ]
         else:
-            prefix = f"/private/users/{userId}"
+            prefix = f"/private/notes/user-{_slug(userId)}-"
             docs = client._check(
                 requests.get(
                     client._url("/brain/list"),
@@ -270,7 +277,7 @@ async def list_memories(userId: str = Query(...), query: str = Query(default=Non
 async def get_profile(userId: str = Query(...)):
     """Return the user's persistent profile document as static/dynamic facts.
 
-    The Unison profile document lives at /private/users/{userId}/profile.md.
+    The Unison profile document lives at /private/notes/user-{userId}-profile.md.
     Its body is free-form Markdown; we surface the full text as a dynamic fact
     so the frontend can display it — or an empty profile when none exists yet.
     """
@@ -279,7 +286,7 @@ async def get_profile(userId: str = Query(...)):
         return JSONResponse({"error": "UNISON_TOKEN not configured"}, status_code=500)
 
     client = UnisonClient(token=unison_token)
-    profile_path = f"/private/users/{userId}/profile.md"
+    profile_path = f"/private/notes/user-{_slug(userId)}-profile.md"
 
     try:
         doc = client.get_doc(profile_path)
@@ -331,7 +338,7 @@ async def list_documents(
         return JSONResponse({"error": "UNISON_TOKEN not configured"}, status_code=500)
 
     client = UnisonClient(token=unison_token)
-    sessions_prefix = f"/private/users/{userId}/sessions/"
+    sessions_prefix = f"/private/notes/user-{_slug(userId)}-"
 
     try:
         raw = client._check(

@@ -189,16 +189,18 @@ class UnisonPipecatService(FrameProcessor):
         memory_tag: str = "pipecat"
         """Tag applied to session note documents written by this processor."""
 
-        profile_path_template: str = "/private/users/{user_id}/profile.md"
+        profile_path_template: str = "/private/notes/user-{user_id}-profile.md"
         """
         Path template for the per-user profile document.
-        {user_id} is substituted at runtime.
+        {user_id} is substituted at runtime (slugified).
+        Flat layout satisfies the brain FS contract (one slug segment).
         """
 
-        notes_path_template: str = "/private/users/{user_id}/sessions/{session_id}.md"
+        notes_path_template: str = "/private/notes/user-{user_id}-{session_id}.md"
         """
         Path template for per-session notes written after each turn.
-        {user_id} and {session_id} are substituted at runtime.
+        {user_id} and {session_id} are substituted at runtime (slugified).
+        Flat layout satisfies the brain FS contract (one slug segment).
         """
 
     def __init__(
@@ -225,16 +227,26 @@ class UnisonPipecatService(FrameProcessor):
 
     # ── path helpers ───────────────────────────────────────────────────────
 
+    @staticmethod
+    def _slug(value: str) -> str:
+        """
+        Slugify a value for use in a brain path segment.
+        Lowercases, collapses non-alphanumeric runs to single dashes, trims ends.
+        """
+        import re
+        s = re.sub(r"[^a-z0-9]+", "-", value.lower())
+        return s.strip("-")
+
     def _profile_path(self) -> str:
         return self._params.profile_path_template.format(
-            user_id=self._user_id,
-            session_id=self._session_id,
+            user_id=self._slug(self._user_id),
+            session_id=self._slug(self._session_id),
         )
 
     def _notes_path(self) -> str:
         return self._params.notes_path_template.format(
-            user_id=self._user_id,
-            session_id=self._session_id,
+            user_id=self._slug(self._user_id),
+            session_id=self._slug(self._session_id),
         )
 
     # ── memory retrieval ───────────────────────────────────────────────────
