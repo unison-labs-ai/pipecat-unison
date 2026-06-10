@@ -105,14 +105,18 @@ pipeline = Pipeline([
 ### Modes
 
 - **`query`** — semantic + keyword search for the current user message
-- **`profile`** — reads a maintained profile document at `/private/users/{user_id}/profile.md`
+- **`profile`** — reads a maintained profile document at `/private/notes/user-{user_id}-profile.md`
 - **`full`** — both (default, recommended)
 
 ## Memory storage
 
-Session notes: `/private/users/<user_id>/sessions/<session_id>.md`
+Session notes: `/private/notes/user-<user_id>-<session_id>.md`
 
-Profile (manually maintained): `/private/users/<user_id>/profile.md`
+Profile (manually maintained): `/private/notes/user-<user_id>-profile.md`
+
+Both paths use the flat one-slug-segment layout required by the brain FS
+contract. `user_id` and `session_id` are slugified (lowercased, non-alphanumeric
+chars collapsed to dashes) before being interpolated.
 
 ## Environment variables
 
