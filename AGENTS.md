@@ -24,7 +24,7 @@ session note so knowledge compounds across conversations.
 Provision a machine key (the human must do this — the key is tied to their account):
 
 ```bash
-curl -X POST https://api.unisonlabs.ai/v1/auth/provision \
+curl -X POST https://brain.unisonlabs.ai/v1/auth/provision \
   -H "Content-Type: application/json" \
   -d '{"email": "agent@example.com"}'
 # returns: {"apiKey":"usk_live_..."}
@@ -69,7 +69,7 @@ from unison_pipecat import UnisonPipecatService
 
 memory = UnisonPipecatService(
     token=os.getenv("UNISON_TOKEN"),       # or omit — reads UNISON_TOKEN from env
-    base_url=os.getenv("UNISON_API_URL"),  # optional; defaults to https://api.unisonlabs.ai
+    base_url=os.getenv("UNISON_API_URL"),  # optional; defaults to https://brain.unisonlabs.ai
     user_id="user_123",
     session_id="session_abc",
     params=UnisonPipecatService.InputParams(
@@ -113,7 +113,7 @@ print(client.status())   # {"docCount": N, ...}
 | Variable | Required | Description |
 |---|---|---|
 | `UNISON_TOKEN` | Yes | Machine key (`usk_live_...`) |
-| `UNISON_API_URL` | No | Override API host (default: `https://api.unisonlabs.ai`) |
+| `UNISON_API_URL` | No | Override API host (default: `https://brain.unisonlabs.ai`) |
 | `OPENAI_API_KEY` | Yes (backend) | OpenAI key for STT / LLM / TTS |
 | `VITE_UNISON_TOKEN` | No | Frontend token for the in-browser memory panel |
 | `VITE_BACKEND_URL` | No | Override backend URL (default: `http://localhost:8001`) |

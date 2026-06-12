@@ -34,7 +34,7 @@ On every LLMContextFrame the processor:
      each turn so memories accumulate across sessions.
 
 Auth: reads UNISON_TOKEN (a usk_... key) from env or the token= constructor
-argument.  UNISON_API_URL overrides the default https://api.unisonlabs.ai.
+argument.  UNISON_API_URL overrides the default https://brain.unisonlabs.ai.
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ class UnisonError(Exception):
 class UnisonClient:
     """Thin synchronous REST client for the Unison brain API."""
 
-    DEFAULT_BASE_URL = "https://api.unisonlabs.ai"
+    DEFAULT_BASE_URL = "https://brain.unisonlabs.ai"
 
     def __init__(self, token: str, base_url: str | None = None) -> None:
         self._token = token

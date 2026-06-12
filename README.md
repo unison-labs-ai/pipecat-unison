@@ -68,7 +68,7 @@ from pipecat.pipeline.pipeline import Pipeline
 
 memory = UnisonPipecatService(
     token=os.getenv("UNISON_TOKEN"),       # or omit — reads env automatically
-    base_url=os.getenv("UNISON_API_URL"),  # optional; defaults to https://api.unisonlabs.ai
+    base_url=os.getenv("UNISON_API_URL"),  # optional; defaults to https://brain.unisonlabs.ai
     user_id="user_123",
     session_id="session_abc",
     params=UnisonPipecatService.InputParams(
@@ -123,7 +123,7 @@ chars collapsed to dashes) before being interpolated.
 | Variable | Required | Description |
 |---|---|---|
 | `UNISON_TOKEN` | Yes | Unison API token (`usk_live_...`) — backend |
-| `UNISON_API_URL` | No | Override API base URL (default: `https://api.unisonlabs.ai`) |
+| `UNISON_API_URL` | No | Override API base URL (default: `https://brain.unisonlabs.ai`) |
 | `OPENAI_API_KEY` | Yes (backend) | OpenAI key for STT / LLM / TTS |
 | `VITE_UNISON_TOKEN` | No | Frontend token for the in-browser memory panel |
 | `VITE_UNISON_API_URL` | No | Frontend API base URL override |
@@ -133,13 +133,13 @@ chars collapsed to dashes) before being interpolated.
 
 ```bash
 # Provision a machine key
-curl -X POST https://api.unisonlabs.ai/v1/auth/provision \
+curl -X POST https://brain.unisonlabs.ai/v1/auth/provision \
   -H "Content-Type: application/json" \
   -d '{"email": "agent@example.com"}'
 # returns: {"apiKey":"usk_live_..."}
 
 # Verify with OTP from email (makes the token permanent)
-curl -X POST https://api.unisonlabs.ai/v1/auth/verify \
+curl -X POST https://brain.unisonlabs.ai/v1/auth/verify \
   -H "Content-Type: application/json" \
   -d '{"email": "agent@example.com", "code": "123456"}'
 ```
