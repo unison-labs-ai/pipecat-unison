@@ -9,7 +9,7 @@ const BACKEND_URL =
 
 // Unison API URL + token for the in-browser whoami check
 const UNISON_API_URL =
-  import.meta.env["VITE_UNISON_API_URL"] ?? "https://api.unisonlabs.ai";
+  import.meta.env["VITE_UNISON_API_URL"] ?? "https://brain.unisonlabs.ai";
 const UNISON_TOKEN = import.meta.env["VITE_UNISON_TOKEN"] ?? "";
 
 // ── Logos ──────────────────────────────────────────────────────────────────
