@@ -1,34 +1,49 @@
-# Unison × Pipecat
+<div align="center">
 
-Persistent memory for [Pipecat](https://pipecat.ai) voice AI agents, powered by
-the [Unison brain](https://unisonlabs.ai).
+<img src="https://raw.githubusercontent.com/unison-labs-ai/unison-brain/main/assets/brain.svg" width="140" />
 
-Unison gives your Pipecat agent long-term memory that persists across sessions —
-the agent recalls what users told it last week, knows their preferences, and builds
-up a knowledge graph over time.
+# pipecat-unison
 
-**AI agents:** see [AGENTS.md](AGENTS.md) for a self-contained onboarding guide
-(install → auth → pipeline wiring → verify).
+**Your voice agent forgets the caller the second they hang up. Give it a memory.**
 
-## What it does
+A [Unison brain](https://unisonlabs.ai) integration for [Pipecat](https://github.com/pipecat-ai/pipecat) voice agents.
 
-- Retrieves relevant memories from the Unison brain before each LLM call
-- Injects them into the system prompt so the LLM has full context
-- Writes a session note to the brain after each user turn so knowledge accumulates
-- Ships a React frontend that shows the live memory panel in real time
+[![CI](https://github.com/unison-labs-ai/pipecat-unison/actions/workflows/ci.yml/badge.svg)](https://github.com/unison-labs-ai/pipecat-unison/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/unison-labs-ai/pipecat-unison?style=social)](https://github.com/unison-labs-ai/pipecat-unison)
 
-## Quick start
+[Install](#install) · [Usage](#usage) · [API](#api) · [License](#license)
+
+</div>
+
+---
+
+### With Unison vs. without
+
+| Without Unison | With Unison |
+|---|---|
+| Caller says their allergy on call #1. Agent asks again on call #2. | `UnisonPipecatService` retrieves the allergy from the brain before the LLM speaks. |
+| Every session starts from zero — no preferences, no history. | Relevant memories are injected into the system prompt on every turn. |
+| Session data lives only in the audio log — inaccessible to the agent. | A session note is written to the brain after each user turn; knowledge compounds. |
+| Memory is per-session, per-agent, per-tool. | One brain. All your agents read the same source of truth. |
+
+---
+
+## Install
 
 **Prerequisites:** [Bun](https://bun.sh) and Python ≥ 3.10.
 
 ```bash
-# 1. Install frontend deps
+# Frontend deps
 bun install
 
-# 2. Install backend deps
+# Backend deps
 cd backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && cd ..
+```
 
-# 3. Configure
+Configure:
+
+```bash
 cp backend/.env.example backend/.env   # fill in UNISON_TOKEN + OPENAI_API_KEY
 cp .env.example .env                   # fill in VITE_UNISON_TOKEN (optional)
 ```
@@ -47,6 +62,10 @@ VITE_UNISON_TOKEN=usk_live_...
 VITE_BACKEND_URL=http://localhost:8001
 ```
 
+---
+
+## Usage
+
 ```bash
 # Terminal 1 — voice backend
 cd backend && source venv/bin/activate && python server.py
@@ -57,7 +76,9 @@ bun run dev
 
 Open `http://localhost:5173`, click the circle to start a voice session.
 
-## Pipecat processor
+---
+
+## API
 
 Drop `UnisonPipecatService` between the user aggregator and the LLM:
 
@@ -108,28 +129,18 @@ pipeline = Pipeline([
 - **`profile`** — reads a maintained profile document at `/private/notes/user-{user_id}-profile.md`
 - **`full`** — both (default, recommended)
 
-## Memory storage
+### Verify connectivity
 
-Session notes: `/private/notes/user-<user_id>-<session_id>.md`
+```python
+from unison_pipecat import UnisonClient
+import os
 
-Profile (manually maintained): `/private/notes/user-<user_id>-profile.md`
+client = UnisonClient(token=os.environ["UNISON_TOKEN"])
+print(client.whoami())   # {"user": {...}, "tenant": {...}, "scopes": ["brain:read","brain:write"]}
+print(client.status())   # {"docCount": N, ...}
+```
 
-Both paths use the flat one-slug-segment layout required by the brain FS
-contract. `user_id` and `session_id` are slugified (lowercased, non-alphanumeric
-chars collapsed to dashes) before being interpolated.
-
-## Environment variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `UNISON_TOKEN` | Yes | Unison API token (`usk_live_...`) — backend |
-| `UNISON_API_URL` | No | Override API base URL (default: `https://brain.unisonlabs.ai`) |
-| `OPENAI_API_KEY` | Yes (backend) | OpenAI key for STT / LLM / TTS |
-| `VITE_UNISON_TOKEN` | No | Frontend token for the in-browser memory panel |
-| `VITE_UNISON_API_URL` | No | Frontend API base URL override |
-| `VITE_BACKEND_URL` | No | Override backend URL (default: `http://localhost:8001`) |
-
-## Getting a UNISON_TOKEN
+### Get a token
 
 ```bash
 # Provision a machine key
@@ -150,21 +161,51 @@ Or with the Unison CLI:
 npx @unisonlabs/cli login
 ```
 
-## Verify connectivity
+### Environment variables
 
-```python
-from unison_pipecat import UnisonClient
-import os
+| Variable | Required | Description |
+|---|---|---|
+| `UNISON_TOKEN` | Yes | Unison API token (`usk_live_...`) |
+| `UNISON_API_URL` | No | Override API base URL (default: `https://brain.unisonlabs.ai`) |
+| `OPENAI_API_KEY` | Yes (backend) | OpenAI key for STT / LLM / TTS |
+| `VITE_UNISON_TOKEN` | No | Frontend token for the in-browser memory panel |
+| `VITE_BACKEND_URL` | No | Override backend URL (default: `http://localhost:8001`) |
 
-client = UnisonClient(token=os.environ["UNISON_TOKEN"])
-print(client.whoami())   # {"user": {...}, "workspace": {...}, "scopes": ["brain:read","brain:write"]}
-print(client.status())   # {"docCount": N, ...}
-```
+---
 
-## Links
+## Star history
 
-- [Unison docs](https://unisonlabs.ai)
-- [Pipecat docs](https://docs.pipecat.ai)
-- [@unisonlabs/sdk on npm](https://www.npmjs.com/package/@unisonlabs/sdk)
-- [AGENTS.md](AGENTS.md) — agent onboarding guide
-- [CONTRIBUTING.md](CONTRIBUTING.md) — development workflow
+<div align="center">
+<a href="https://star-history.com/#unison-labs-ai/pipecat-unison&Date">
+<img src="https://api.star-history.com/svg?repos=unison-labs-ai/pipecat-unison&type=Date" width="600" />
+</a>
+<p>⭐ If Unison memory helps your voice agent, star this repo!</p>
+</div>
+
+---
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
+
+---
+
+## Part of the Unison Labs constellation
+
+**One brain, every agent.** Every repo below reads from _and writes to_ the same [Unison brain](https://unisonlabs.ai) — no per-tool memory silos.
+
+| Repo | What it does |
+|---|---|
+| [unison-brain](https://github.com/unison-labs-ai/unison-brain) | CLI · SDK · MCP server — the core |
+| [claude-unison](https://github.com/unison-labs-ai/claude-unison) | Memory for Claude Code |
+| [cursor-unison](https://github.com/unison-labs-ai/cursor-unison) | Memory for Cursor |
+| [codex-unison](https://github.com/unison-labs-ai/codex-unison) | Memory for OpenAI Codex CLI |
+| [opencode-unison](https://github.com/unison-labs-ai/opencode-unison) | Memory for OpenCode |
+| [openclaw-unison](https://github.com/unison-labs-ai/openclaw-unison) | Memory for OpenClaw |
+| **[pipecat-unison](https://github.com/unison-labs-ai/pipecat-unison)** | **Memory for Pipecat voice agents ← you are here** |
+| [python-sdk](https://github.com/unison-labs-ai/python-sdk) | Python SDK for the brain |
+| [install-mcp](https://github.com/unison-labs-ai/install-mcp) | One-command MCP installer |
+| [code-chunk](https://github.com/unison-labs-ai/code-chunk) | AST-aware code chunking |
+| [unison-fs](https://github.com/unison-labs-ai/unison-fs) | Mount the brain as a filesystem |
+| [backchannel](https://github.com/unison-labs-ai/backchannel) | Async messaging between agents |
+| [Unison-evals](https://github.com/unison-labs-ai/Unison-evals) | Open memory benchmark suite |
