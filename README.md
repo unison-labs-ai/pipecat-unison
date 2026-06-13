@@ -157,7 +157,7 @@ from unison_pipecat import UnisonClient
 import os
 
 client = UnisonClient(token=os.environ["UNISON_TOKEN"])
-print(client.whoami())   # {"user": {...}, "tenant": {...}, "scopes": ["brain:read","brain:write"]}
+print(client.whoami())   # {"user": {...}, "workspace": {...}, "scopes": ["brain:read","brain:write"]}
 print(client.status())   # {"docCount": N, ...}
 ```
 

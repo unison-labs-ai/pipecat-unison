@@ -104,7 +104,7 @@ from unison_pipecat import UnisonClient
 import os
 
 client = UnisonClient(token=os.environ["UNISON_TOKEN"])
-print(client.whoami())   # {"user": {...}, "tenant": {...}, "scopes": [...]}
+print(client.whoami())   # {"user": {...}, "workspace": {...}, "scopes": [...]}
 print(client.status())   # {"docCount": N, ...}
 ```
 

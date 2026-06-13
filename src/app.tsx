@@ -149,7 +149,7 @@ async function fetchSessionDocuments(
 
 async function checkWhoami(): Promise<{
   email: string;
-  tenant: string;
+  workspace: string;
 } | null> {
   if (!UNISON_TOKEN) return null;
   try {
@@ -159,11 +159,11 @@ async function checkWhoami(): Promise<{
     if (!resp.ok) return null;
     const data = (await resp.json()) as {
       user?: { email?: string };
-      tenant?: { name?: string };
+      workspace?: { name?: string };
     };
     return {
       email: data.user?.email ?? "",
-      tenant: data.tenant?.name ?? "",
+      workspace: data.workspace?.name ?? "",
     };
   } catch {
     return null;
@@ -196,7 +196,7 @@ export function VoiceApp() {
   // Brain auth status
   const [whoami, setWhoami] = useState<{
     email: string;
-    tenant: string;
+    workspace: string;
   } | null>(null);
 
   // Transcript
@@ -473,7 +473,7 @@ export function VoiceApp() {
           <span>User ID: {userId}</span>
           {whoami && (
             <span className="brain-status">
-              Brain: {whoami.tenant || whoami.email}
+              Brain: {whoami.workspace || whoami.email}
             </span>
           )}
           {!UNISON_TOKEN && (
@@ -569,8 +569,8 @@ export function VoiceApp() {
             Sessions
           </button>
           {whoami && (
-            <span className="brain-tenant">
-              {whoami.tenant || whoami.email}
+            <span className="brain-workspace">
+              {whoami.workspace || whoami.email}
             </span>
           )}
         </div>

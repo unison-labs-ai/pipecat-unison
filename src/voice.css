@@ -286,7 +286,7 @@ body,
   letter-spacing: -0.01em;
 }
 
-.brain-tenant {
+.brain-workspace {
   font-size: 11px;
   color: var(--accent);
 }
@@ -480,7 +480,7 @@ body,
   border-bottom-color: var(--accent);
 }
 
-.brain-tenant {
+.brain-workspace {
   margin-left: auto;
   padding-right: 12px;
   font-size: 10px;
