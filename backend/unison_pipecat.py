@@ -147,7 +147,7 @@ class UnisonClient:
         return self._check(resp)
 
     def whoami(self) -> dict:
-        """Return the authenticated user/tenant information."""
+        """Return the authenticated user/workspace information."""
         resp = requests.get(self._url("/auth/whoami"), headers=self._headers(), timeout=5)
         return self._check(resp)
 
