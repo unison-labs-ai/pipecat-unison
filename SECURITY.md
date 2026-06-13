@@ -17,7 +17,7 @@ investigate. We'll credit reporters who want it once a fix ships.
 
 This repository is a **demo integration** (Pipecat voice pipeline + Unison brain
 memory). It holds no secrets and is not a security boundary — all authentication,
-authorization, and tenant isolation are enforced **server-side** by the Unison
+authorization, and workspace isolation are enforced **server-side** by the Unison
 brain API. Reports about this client are most useful when they concern:
 
 - credential handling (`UNISON_TOKEN` / `VITE_UNISON_TOKEN` env vars),
