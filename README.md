@@ -29,6 +29,19 @@ A [Unison brain](https://unisonlabs.ai) integration for [Pipecat](https://github
 
 ---
 
+**Powered by the [Unison brain](https://github.com/unison-labs-ai/unison-brain#the-hard-part--what-every-memory-system-gets-wrong) — not a flat vector store.** Temporal facts that know *what changed when*, entity resolution that knows *who's who*, and one source of truth shared across every agent and teammate — voice, Claude Code, Cursor, Codex, your backend.
+
+### Why Unison, not a vector store bolted onto your voice agent (or mem0)?
+
+| Other memory | Unison |
+|---|---|
+| Stores *what the caller said* as a flat log / vector dump | Resolves *who and what they meant* and *when it changed* — a temporal knowledge graph |
+| A silo — scoped to this one agent | One brain every agent **and teammate** reads from and writes back to |
+| Greets a returning caller with a fact that's no longer true | Bitemporal supersession stops surfacing the version that's no longer true |
+| "Trust our benchmark" | An [open, reproducible benchmark](https://github.com/unison-labs-ai/Unison-evals) scoring every system — including ours |
+
+---
+
 ## Install
 
 **Prerequisites:** [Bun](https://bun.sh) and Python ≥ 3.10.
