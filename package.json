@@ -35,7 +35,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.3",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^8.2.2"
   },
   "dependencies": {
     "@pipecat-ai/client-js": "^1.11.0",
